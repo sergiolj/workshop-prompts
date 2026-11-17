@@ -345,11 +345,36 @@ const WORKER_URL="https://lab-prompts.sergio-lopes.workers.dev";
   if(!WORKER_URL)return;
   async function sample(input,opts){
     opts=opts||{};
+    const stream=!!opts.onText;
     let r;
-    try{r=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({input}),signal:opts.signal})}
-    catch(e){throw {code:"network",message:"sem conexão com o Worker (confira o WORKER_URL e o ALLOWED_ORIGIN): "+String(e)}}
-    let d={};try{d=await r.json()}catch(e){}
-    if(!r.ok)throw {code:(r.status===429||r.status===503)?"rate_limited":"error",message:(d.message||"erro")+(d.detail?" – "+d.detail:"")+" [HTTP "+r.status+"]"};
+    const ac=new AbortController();const to=setTimeout(()=>ac.abort(),90000);
+    if(opts.signal)opts.signal.addEventListener("abort",()=>ac.abort());
+    try{r=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({input,stream}),signal:ac.signal})}
+    catch(e){clearTimeout(to);throw {code:"network",message:(e&&e.name==="AbortError"?"o Worker não respondeu em 90 segundos":"sem conexão com o Worker (confira o WORKER_URL e o ALLOWED_ORIGIN): "+String(e))}}
+    const ct=r.headers.get("Content-Type")||"";
+    if(!r.ok){clearTimeout(to);let d={};try{d=await r.json()}catch(e){}
+      throw {code:(r.status===429||r.status===503)?"rate_limited":"error",message:(d.message||"erro")+(d.detail?" – "+d.detail:"")+" [HTTP "+r.status+"]"}}
+    if(ct.includes("text/event-stream")){
+      const rd=r.body.getReader(),dec=new TextDecoder();let buf="",acc="",model="";
+      try{
+        for(;;){
+          const {done,value}=await rd.read();if(done)break;
+          buf+=dec.decode(value,{stream:true});
+          const lines=buf.split("\n");buf=lines.pop();
+          for(const l of lines){
+            if(!l.startsWith("data:"))continue;
+            let j;try{j=JSON.parse(l.slice(5))}catch(e){continue}
+            if(j.t){acc+=j.t;if(opts.onText)opts.onText({text:acc,delta:j.t})}
+            if(j.model)model=j.model;
+          }
+        }
+      }catch(e){clearTimeout(to);throw {code:"network",message:"a resposta foi interrompida: "+String(e)}}
+      clearTimeout(to);
+      if(!acc.trim())throw {code:"error",message:"resposta vazia [HTTP 200]"};
+      return {text:acc.trim(),modelApplied:model};
+    }
+    clearTimeout(to);
+    const d=await r.json();
     if(opts.onText)opts.onText({text:d.text,delta:d.text});
     return {text:d.text,modelApplied:d.model};
   }
