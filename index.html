@@ -347,9 +347,9 @@ const WORKER_URL="https://lab-prompts.sergio-lopes.workers.dev";
     opts=opts||{};
     let r;
     try{r=await fetch(WORKER_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({input}),signal:opts.signal})}
-    catch(e){throw {code:"network",message:String(e)}}
+    catch(e){throw {code:"network",message:"sem conexão com o Worker (confira o WORKER_URL e o ALLOWED_ORIGIN): "+String(e)}}
     let d={};try{d=await r.json()}catch(e){}
-    if(!r.ok)throw {code:r.status===429?"rate_limited":"error",message:d.message||"erro"};
+    if(!r.ok)throw {code:(r.status===429||r.status===503)?"rate_limited":"error",message:(d.message||"erro")+(d.detail?" – "+d.detail:"")+" [HTTP "+r.status+"]"};
     if(opts.onText)opts.onText({text:d.text,delta:d.text});
     return {text:d.text,modelApplied:d.model};
   }
@@ -604,7 +604,7 @@ async function doSend(text){
     const code=e&&e.code;
     if(code==="not_granted"){tool="gemini";flash="O acesso à IA neste painel foi negado. Use uma das ferramentas da lista: abra-a em outra janela e cole a resposta aqui."}
     else if(code==="rate_limited")flash="Limite de uso atingido ou muitos envios seguidos. Aguarde um pouco ou use outra ferramenta da lista.";
-    else flash="Não foi possível gerar a resposta agora. Envie de novo.";
+    else flash="Não foi possível gerar a resposta agora. Envie de novo."+(e&&e.message?" Detalhe técnico: "+e.message:"");
     if(!c.turns.length){
       CONVS=CONVS.filter(x=>x!==c);
       if(cur===c.id)cur=null;
@@ -763,7 +763,7 @@ SUGESTAO: o prompt reescrito para se enquadrar no tipo, mantendo as palavras do 
     showVerdict(box,V,m,/^nenhuma/i.test(sug)?"":sug);
   }catch(e){
     const rr=ruleCheck(tag,txt);
-    showVerdict(box,rr.v,rr.m,rr.sug,(e&&e.code==="rate_limited"?"A IA está ocupada. ":"A IA não respondeu. ")+"Esta é a verificação automática da estrutura da pergunta, sem IA.");
+    showVerdict(box,rr.v,rr.m,rr.sug,(e&&e.code==="rate_limited"?"A IA está ocupada. ":"A IA não respondeu"+(e&&e.message?" ("+e.message+")":"")+". ")+"Esta é a verificação automática da estrutura da pergunta, sem IA.");
   }finally{chkBusy=false;renderCompose()}
 }
 $("#chkb").onclick=checkPrompt;
