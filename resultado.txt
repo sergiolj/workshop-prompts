@@ -1,0 +1,265 @@
+LABORATÓRIO DE PROMPTS
+
+Assunto: Vibe Coding
+Curso: Engenharia de Software
+Minha afirmação: O vibe coding é para qualquer pessoa, mas os resultados são diferentes para quem tem conhecimento em programação.
+
+----------------------------------------
+QUADRO RESUMO
+----------------------------------------
+
+NEUTRA (Pergunta aberta, sem conclusão e sem contexto.)
+  Pontos de vista diferentes: Nenhum
+  Minha confiança (1 a 5): 3
+  O que costuma acontecer: Costuma vir genérica, servindo para qualquer pessoa.
+
+DIRECIONADA (Já traz a conclusão dentro da pergunta.)
+  Pontos de vista diferentes: Algum
+  Minha confiança (1 a 5): 3
+  O que costuma acontecer: Tende a seguir a conclusão e mostrar só o lado que a confirma.
+
+CONTEXTUALIZADA (Diz quem você é, o que quer e como quer a resposta.)
+  Pontos de vista diferentes: Vários
+  Minha confiança (1 a 5): 5
+  O que costuma acontecer: Costuma vir mais específica e no formato que você pediu.
+
+COM CHECAGEM (Contextualizada, pedindo outros lados, limites e fontes.)
+  Pontos de vista diferentes: Vários
+  Minha confiança (1 a 5): 5
+  O que costuma acontecer: Tende a trazer pontos de vista diferentes e a indicar o que conferir.
+
+Observação: Você viu mais pontos de vista diferentes na pergunta contextualizada do que na pergunta neutra.
+
+----------------------------------------
+PERGUNTA NEUTRA
+----------------------------------------
+
+Meu prompt:
+Vibe coding consegue bons resultados?
+
+Resposta da IA:
+**Sim, o "vibe coding" consegue resultados surpreendentes**, mas com uma ressalva fundamental: **depende do objetivo, do escopo e de quem está guiando a IA.**
+
+Se você entende "vibe coding" como a prática de construir software apenas descrevendo o que você quer em linguagem natural (deixando que IAs como Cursor, Claude, ChatGPT e Copilot escrevam 100% do código), a resposta curta é: **sim, ele entrega protótipos e aplicativos funcionais muito rápido, mas pode falhar em projetos complexos ou de longo prazo.**
+
+Aqui está uma análise detalhada dos resultados que o vibe coding consegue entregar:
+
+---
+
+### Onde o Vibe Coding entrega **excelentes** resultados:
+1. **Protótipos e MVPs (Mínimo Produto Viável):** Se você quer validar uma ideia de negócio em um fim de semana, o vibe coding é imbatível. Você consegue criar telas, conectar bancos de dados e ter algo clicável em horas.
+2. **Automações e Scripts Pessoais:** Criar scripts para organizar arquivos, raspar dados da web (web scraping) ou automatizar tarefas repetitivas do dia a dia.
+3. **Pequenas Ferramentas e Landing Pages:** Sites institucionais, calculadoras online, dashboards simples e aplicativos de uso único.
+4. **Empoderamento de Não-Programadores:** Pessoas que entendem de lógica de negócio, design ou marketing agora conseguem criar suas próprias ferramentas sem saber sintaxe de programação.
+
+---
+
+### Onde o Vibe Coding falha ou traz **maus** resultados:
+1. **Manutenção e Escalabilidade:** Códigos gerados por IA muitas vezes parecem uma "colcha de retalhos". Conforme o projeto cresce, a IA pode começar a se perder no contexto, introduzindo bugs estruturais difíceis de resolver sem conhecimento técnico.
+2. **Segurança da Informação:** IAs frequentemente cometem erros básicos de segurança (vulnerabilidades como SQL Injection, exposição de chaves de API, falhas de autenticação). Se você não sabe o que procurar, pode lançar um produto altamente vulnerável.
+3. **Depuração (Debugging) Complexa:** Quando o "vibe" quebra e o código para de funcionar, o não-programador muitas vezes entra num looping infinito de frustração, colando mensagens de erro na IA sem conseguir resolver a raiz do problema.
+
+---
+
+### O Segredo para o Vibe Coding Funcionar de Verdade
+Os melhores resultados no vibe coding não vêm de pessoas que *nunca* programaram, mas sim de **desenvolvedores experientes** ou **"engenheiros de prompt" avançados**. 
+
+Quem tem conhecimento técnico usa o vibe coding como um superpoder:
+* A IA escreve o código chato e repetitivo (boilerplate).
+* O humano atua como um **arquiteto de software**, revisando a segurança, garantindo boas práticas e guiando a IA passo a passo, em vez de pedir um aplicativo inteiro de uma só vez.
+
+### Conclusão
+O vibe coding **consegue ótimos resultados** para criação rápida, aprendizado e prototipagem. No entanto, para softwares de missão crítica, corporativos ou de grande escala, ele ainda precisa ser supervisionado por alguém que entenda de lógica de programação e arquitetura de sistemas.
+
+----------------------------------------
+PERGUNTA DIRECIONADA
+----------------------------------------
+
+Meu prompt:
+O vibe coding é para qualquer pessoa, mas os resultados são diferentes para quem tem conhecimento em programação. Explique por quê?
+
+Resposta da IA:
+O **vibe coding** — conceito em que você programa apenas descrevendo o que deseja em linguagem natural, deixando que a IA escreva todo o código — realmente democratizou o desenvolvimento. Qualquer pessoa pode criar um aplicativo apenas "passando a vibração" ou a ideia para a IA.
+
+No entanto, dizer que **qualquer um pode fazer** não significa que **todos os resultados serão iguais**. A diferença entre o resultado obtido por um leigo e por alguém com conhecimento em programação é monumental. 
+
+Aqui está o porquê:
+
+---
+
+### 1. A qualidade do comando (Prompt)
+* **Quem não sabe programar:** Descreve o problema de forma abstrata ou focada apenas na estética e no comportamento visível ("Quero um botão bonito que salve os dados"). 
+* **Quem sabe programar:** Usa jargão técnico, pensa em estruturas de dados, estados (state), fluxo de execução e arquitetura ("Crie um componente reativo em React que faça um *debounce* na chamada da API e gerencie o estado de loading global via Context").
+* **Resultado:** A IA entrega um código muito mais robusto, limpo e eficiente quando recebe instruções precisas e estruturadas.
+
+### 2. A capacidade de depuração (Debugging)
+As IAs alucinam, erram e criam códigos com bugs. 
+* **Quem não sabe programar:** Quando o código quebra ou dá um erro críptico (ex: *NullPointerException* ou *CORS error*), a pessoa não sabe ler o rastreamento (stack trace). Ela tenta colar o erro de volta na IA, o que muitas vezes gera um loop infinito de correções frustrantes.
+* **Quem sabe programar:** Olha para o erro, entende exatamente onde a IA falhou (uma variável mal escopada, uma dependência desatualizada) e dá a diretriz exata para a correção em segundos.
+
+### 3. Arquitetura e Escalabilidade
+* **Quem não sabe programar:** Consegue criar um protótipo funcional rápido (o famoso MVP). Porém, à medida que o projeto cresce, o código gerado por IA sem supervisão tende a virar uma "bola de cabelo" (código acoplado, sem padrão, difícil de manter).
+* **Quem sabe programar:** Usa a IA como um *copiloto de 10x a velocidade*, mas mantém o controle da arquitetura. Sabe modularizar o código, aplicar boas práticas de segurança, gerenciar banco de dados de forma eficiente e garantir que o sistema não caia com 10 usuários simultâneos.
+
+### 4. Segurança e Vulnerabilidades
+* **Quem não sabe programar:** Não faz ideia se o código gerado pela IA expõe senhas, tem falhas de injeção de SQL ou permite vazamento de dados. Para o leigo, se está funcionando na tela, está seguro.
+* **Quem sabe programar:** Identifica brechas de segurança invisíveis que a IA muitas vezes deixa passar por conveniência ou limite de contexto.
+
+---
+
+### Resumo da ópera
+
+Enquanto o **leigo** no *vibe coding* assume o papel de um **cliente ou gerente de produtos** (diz o que quer e torce para dar certo), o **programador** assume o papel de um **arquiteto ou diretor de engenharia** (orquestra a IA, revisa o trabalho, garante a qualidade e constrói sistemas de nível de produção). 
+
+O *vibe coding* não substitui o conhecimento de programação; na verdade, **ele amplifica o poder de quem já sabe programar**, permitindo que um único desenvolvedor faça o trabalho que antes exigia uma equipe inteira.
+
+----------------------------------------
+PERGUNTA CONTEXTUALIZADA
+----------------------------------------
+
+Meu prompt:
+Sou estudante de engenharia de software, estou fazendo meu primeiro projeto vibe coding. Ele é um projeto bem simples utilizando apenas linguagens de front end como html, css e js e integração com um agente rodando uma IA gratuita do google. Me explique como eu posso tornar esse projeto mais fácil de refatorar ou dar manutenção no futuro.
+
+Resposta da IA:
+Parabéns por dar o primeiro passo no "vibe coding"! Essa abordagem de construir com IA é excelente para tirar ideias do papel rápido, mas o grande perigo é que o código gerado por IA pode virar um "espaguete" difícil de mexer depois. 
+
+Como estudante de Engenharia de Software, você tem a oportunidade perfeita de aplicar boas práticas desde cedo, mesmo em um projeto simples (HTML, CSS, JS puro).
+
+Aqui estão passos práticos para deixar seu código limpo, modular e fácil de dar manutenção:
+
+---
+
+### 1. Separe as Responsabilidades (Arquitetura de Pastas)
+O erro mais comum em projetos simples é jogar tudo em um único arquivo `index.html` ou `script.js`. Divida seu projeto logicamente:
+
+```text
+meu-projeto/
+│
+├── index.html
+│
+├── css/
+│   ├── variables.css    # Cores, fontes, espaçamentos
+│   ├── global.css       # Resets e estilos gerais
+│   └── chat.css         # Estilos específicos do componente de chat
+│
+└── js/
+    ├── api.js           # Apenas a lógica de comunicação com a IA do Google
+    ├── ui.js            # Manipulação do DOM (mostrar mensagens, rolar tela)
+    └── main.js          # Onde tudo se conecta (ponto de entrada)
+```
+
+### 2. Isole a Integração com a IA (`api.js`)
+A IA do Google (provavelmente a API do Gemini) vai mudar ou precisar de ajustes no futuro. O código que chama a API **não deve se misturar** com o código que mexe na tela.
+
+* Crie um arquivo dedicado para isso.
+* Exporte uma função limpa, por exemplo: `async function perguntarAI(prompt) { ... }`.
+* Se amanhã você quiser trocar a IA do Google pela da OpenAI, você só mexe nesse arquivo.
+
+### 3. Use Variáveis CSS (Design Tokens)
+IA adora chumbas cores hexadecimais (`#4F46E5`) e tamanhos de pixels aleatórios (`14px`, `17px`) pelo CSS. 
+No topo do seu CSS (ou em um arquivo separado), defina variáveis:
+
+```css
+:root {
+  --primary-color: #4F46E5;
+  --bg-color: #F3F4F6;
+  --text-main: #1F2937;
+  --radius: 8px;
+}
+```
+Se precisar mudar a identidade visual do app no futuro, você altera em um só lugar.
+
+### 4. Crie Funções Puras e Pequenas no JS
+Evite funções gigantes que fazem de tudo (pegam o input, validam, chamam a API, criam o elemento HTML e mexem no scroll). 
+* Uma função deve fazer **uma única coisa**.
+* Exemplo: `criarElementoMensagem(texto, remetente)` deve apenas retornar a tag HTML pronta, sem injetá-la na página. Quem injeta é outra função.
+
+### 5. Proteja sua Chave de API (Crucial!)
+Como você está usando HTML/JS puro, **sua chave da API do Google vai ficar exposta no código frontend** se você for descuidado. 
+* **Nunca** comite sua chave real no GitHub.
+* Use um arquivo `config.js` que está no seu `.gitignore`, e deixe um `config.example.js` no repositório.
+* *Nota de Engenharia:* O ideal real para produção seria usar um microsserviço de backend (Node.js/Serverless), mas para um projeto simples de frontend, apenas garanta que sua chave tenha restrições de domínio no Google Cloud Console.
+
+### 6. Documente o "Porquê", não o "O quê"
+Como você está usando IA, peça para ela mesma comentar o código, mas com foco em **contexto**. 
+Em vez de pedir *"comente este código"*, peça: *"Adicione comentários explicando *por que* usamos essa abordagem para lidar com o histórico de mensagens da IA"*.
+
+### 7. Use Controle de Versão (Git) com sabedoria
+Como o "vibe coding" gera muito código rápido:
+* Faça commits frequentes. Cada vez que a IA acertar uma funcionalidade nova, faça um commit.
+* Se a IA estragar o código na próxima interação (o famoso looping de alucinação), fica fácil dar um `git checkout` e voltar para onde estava funcionando.
+
+---
+
+**Resumo para o dia a dia:** 
+Sempre que for pedir algo para a IA, diga para ela: *"Escreva este código de forma modular, separando a lógica da interface, e seguindo boas práticas de JavaScript moderno (ES6+)"*. Isso já força a IA a te entregar um código muito melhor!
+
+----------------------------------------
+PERGUNTA COM CHECAGEM
+----------------------------------------
+
+Meu prompt:
+Sou estudante de engenharia de software, estou fazendo meu primeiro projeto vibe coding. Ele é um projeto bem simples utilizando apenas linguagens de front end como html, css e js e integração com um agente rodando uma IA gratuita do google. Me explique como eu posso tornar esse projeto mais fácil de refatorar ou dar manutenção no futuro. Quais as limitações que posso ter se não seguir boas práticas agora? Quais os limites da abordagem vibe coding, existem fontes confiáveis sobre o assunto?
+
+Resposta da IA:
+Parabéns por dar o primeiro passo no desenvolvimento! O "vibe coding" (programação guiada por IA, onde você descreve o que quer e a IA gera o código) é excelente para prototipar rápido, mas como estudante de Engenharia de Software, você já deve saber que **fazer o código funcionar é apenas 20% do trabalho; mantê-lo funcionando é o resto.**
+
+Aqui está um guia prático para responder às suas dúvidas e elevar o nível do seu projeto, mesmo usando apenas HTML, CSS e JavaScript puro (Vanilla JS).
+
+---
+
+### 1. Como tornar o projeto fácil de refatorar e manter?
+
+Como seu projeto não usa frameworks (como React ou Vue), a arquitetura depende inteiramente de você. Para não criar um "código espaguete", adote estas práticas:
+
+*   **Separação de Responsabilidades (Vanilla Architecture):**
+    *   **HTML:** Apenas a estrutura (esqueleto).
+    *   **CSS:** Apenas o visual (estilização). Divida em arquivos menores se crescer (ex: `reset.css`, `layout.css`, `chat.css`).
+    *   **JS:** Divida a lógica em módulos. Em vez de um único `script.js` com 1000 linhas, use ES Modules (`import`/`export`).
+        *   `api.js`: Apenas para falar com a IA do Google.
+        *   `ui.js`: Apenas para manipular o DOM (mostrar mensagens, rolar o chat).
+        *   `app.js`: O cérebro que junta tudo.
+*   **Isolar a API da IA:** Crie um arquivo dedicado para a integração com o Google (Gemini API, imagino). Se a API mudar no futuro, você só mexe em um lugar.
+*   **Variáveis de Ambiente (Cuidado com a Chave da API):** *Nunca* deixe sua chave da API hardcoded no meio do código JS se for subir para o GitHub público. Use um arquivo `.env` (se usar algumbundler) ou instrua a IA a criar um arquivo `config.js` que fica no `.gitignore`.
+*   **Nomes claros:** Exija que a IA crie variáveis e funções com nomes descritivos (ex: `fetchGeminiResponse` em vez de `getData`).
+
+---
+
+### 2. Limitações de não seguir boas práticas agora
+
+Se você deixar a IA gerar tudo em um arquivo só (o que ela adora fazer se você não mandar o contrário), você enfrentará:
+
+*   **Efeito "Castelo de Cartas":** Conforme o projeto cresce, mexer em uma função que mexe no chat quebra o botão de enviar mensagem.
+*   **Dificuldade de Debug:** Quando o erro acontecer (e vai acontecer), você demorará horas para achar onde a IA errou no meio de 500 linhas de código misturado.
+*   **Impossibilidade de Escala:** Se você quiser adicionar uma nova funcionalidade (ex: salvar o histórico no navegador com `localStorage`), o código atual será tão confuso que será mais fácil reescrever do que manter.
+*   **Perda de aprendizado:** O objetivo da faculdade é você entender *como* as coisas funcionam. Se a IA faz tudo e você só copia e cola, você não desenvolve o raciocínio lógico de engenharia.
+
+---
+
+### 3. Os limites da abordagem "Vibe Coding"
+
+O termo "Vibe Coding" (popularizado recentemente no Vale do Silício) descreve a prática de programar apenas no nível de prompt, confiando plenamente na IA. Os limites são claros:
+
+*   **Falta de Contexto Global:** A IA costuma olhar apenas para o trecho de código que você pediu ou para o arquivo atual. Ela frequentemente esquece como o resto do sistema funciona, gerando inconsistências.
+*   **Alucinações e Código Obsoleto:** A IA pode inventar funções que não existem ou usar métodos desatualizados de JavaScript.
+*   **Segurança:** IAs frequentemente geram códigos vulneráveis (ex: expor chaves de API, vulnerabilidades de XSS ao inserir HTML direto no DOM com `innerHTML`).
+*   **Débito Técnico Instantâneo:** O código sai rápido, mas nasce "velho" e mal estruturado.
+
+---
+
+### 4. Fontes confiáveis sobre o assunto
+
+Como o "vibe coding" é um termo recente e meio meme/tendência, os melhores lugares para estudar sobre os limites e boas práticas da IA na programação são os criadores de conteúdo e engenheiros tradicionais que discutem IA:
+
+1.  **Simon Willison's Weblog (simonwillison.net):** Simon é co-criador do Django e um dos maiores defensores e analistas do uso de IA generativa para programação (ele cunhou e discute muito sobre "AI-assisted programming").
+2.  **Martin Fowler (martinfowler.com):** O "guru" da arquitetura de software e refatoração. Embora ele não fale diretamente de "vibe coding", os artigos dele sobre *Refactoring* e *Technical Debt* são essenciais para entender por que a estrutura importa.
+3.  **The Pragmatic Engineer (Gergely Orosz):** Newsletter excelente sobre engenharia de software real, incluindo análises sobre o impacto de ferramentas como GitHub Copilot e agentes de IA na produtividade e qualidade do código.
+4.  **Canais no YouTube de Engenharia de Software Sênior:** Canais como *ByteByteGo* (Alex Xu) ou *Fireship* (que costuma fazer vídeos rápidos e críticos sobre tendências como o vibe coding).
+
+**Dica de ouro para o seu projeto:** Use a IA a seu favor, mas atue como um **Tech Lead**. Em vez de pedir *"faça um chat para mim"*, peça: *"Preciso criar um chat em Vanilla JS usando ES Modules. Como você estruturaria os arquivos?"* Dite as regras para a IA, não deixe ela ditar o projeto para você!
+
+----------------------------------------
+MEU MODELO DE PROMPT DE ESTUDO
+----------------------------------------
+
+Sou estudante de Engenharia de Software. Aponte o que costuma ser confundido sobre esse assunto e o que você não sabe com certeza.
