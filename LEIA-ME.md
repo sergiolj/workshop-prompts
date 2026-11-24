@@ -1,16 +1,14 @@
 # Laboratório de prompts: como publicar no GitHub (gratuito)
 
 Você vai usar três serviços gratuitos:
-1. **GitHub Pages** hospeda a página (`index.html`, as pastas `css` e `js` e os dois vídeos).
+1. **GitHub Pages** hospeda a página (`index.html` e os dois vídeos).
 2. **Cloudflare Workers** guarda a chave da IA e faz a ponte entre a página e a IA.
 3. **Google AI Studio (Gemini)** é a IA que avalia os prompts e responde no painel.
 
 A chave da IA fica só na Cloudflare. Ela nunca vai para o GitHub.
 
 ## Arquivos
-- `index.html`: a estrutura da página.
-- `css/styles.css`: a aparência (cores, fontes e layout).
-- `js/`: o funcionamento da página, dividido em módulos. O endereço do Worker fica em `js/config.js`.
+- `index.html`: o laboratório.
 - `como-usar.mp4` e `o-que-mostra.mp4`: os vídeos (precisam ficar na mesma pasta do `index.html`).
 - `worker/worker.js`: o código do servidor (você cola na Cloudflare).
 
@@ -23,7 +21,7 @@ A chave da IA fica só na Cloudflare. Ela nunca vai para o GitHub.
 1. No GitHub, clique em **New repository**. Nome sugerido: `laboratorio-de-prompts`.
 2. Escolha **Public**. Contas gratuitas só publicam o GitHub Pages em repositório público. Não há problema: a chave não fica no código.
 3. Marque "Add a README" e crie.
-4. Clique em **Add file > Upload files** e envie `index.html`, `como-usar.mp4`, `o-que-mostra.mp4` e as pastas `css`, `js` e `worker`. Faça o commit.
+4. Clique em **Add file > Upload files** e envie `index.html`, `como-usar.mp4`, `o-que-mostra.mp4` e a pasta `worker`. Faça o commit.
 5. Vá em **Settings > Pages**. Em "Build and deployment", escolha **Deploy from a branch**, branch `main`, pasta `/ (root)`, e salve.
 6. Aguarde 1 a 2 minutos. O endereço será `https://SEU-USUARIO.github.io/laboratorio-de-prompts/`.
 
@@ -37,7 +35,7 @@ A chave da IA fica só na Cloudflare. Ela nunca vai para o GitHub.
 5. Copie o endereço do Worker (algo como `https://lab-prompts.SEU-SUBDOMINIO.workers.dev`).
 
 ## Passo 4. Ligar a página ao Worker
-1. No GitHub, abra `js/config.js`, clique no lápis (Edit) e procure a linha `export const WORKER_URL = "";`.
+1. No GitHub, abra `index.html`, clique no lápis (Edit) e procure a linha `const WORKER_URL="";`.
 2. Cole o endereço do Worker entre as aspas e faça o commit.
 3. Aguarde o GitHub Pages atualizar (1 a 2 minutos) e abra a página.
 
@@ -46,12 +44,6 @@ A chave da IA fica só na Cloudflare. Ela nunca vai para o GitHub.
 - Escreva um prompt e clique em **Verificar meu prompt**: deve aparecer o veredito com uma sugestão.
 - Se a opção "Neste painel (IA)" não aparecer, o `WORKER_URL` está vazio. A página continua funcionando, com o verificador por regras e as ferramentas externas.
 - Se aparecer erro, abra o Worker na Cloudflare e veja a aba **Logs**. Os motivos mais comuns são `ALLOWED_ORIGIN` diferente do endereço do site ou chave errada.
-- O aviso de erro na página traz o motivo dado pela IA, por exemplo `Gemini HTTP 400: ...`. O mesmo texto aparece na aba **Logs** do Worker. Os mais comuns:
-  - `HTTP 503` (a IA está sobrecarregada): problema temporário do Gemini. O Worker já tenta de novo uma vez; se persistir, espere alguns minutos.
-  - `HTTP 429`: a cota gratuita acabou ou houve pedidos demais seguidos.
-  - `HTTP 401` ou `403`: a chave `GEMINI_API_KEY` está errada ou sem permissão.
-  - `HTTP 404`: o modelo em `GEMINI_MODEL` não existe. Apague a variável para usar o padrão.
-  - `HTTP 400`: a IA recusou os parâmetros do pedido. Leia a mensagem que vem depois do código.
 
 ## Se a cota gratuita acabar
 O Gemini gratuito tem limite diário. Quando acaba, a página avisa e o verificador usa as regras automaticamente. O painel de IA fica indisponível até a cota voltar.
@@ -62,20 +54,8 @@ A API do Claude é paga por uso, e a conta gratuita do claude.ai não gera chave
 ## Modelo
 Por padrão o Worker usa `gemini-flash-latest`. Para trocar, crie a variável `GEMINI_MODEL` (ou `CLAUDE_MODEL`) com o nome do modelo disponível na sua conta.
 
-## Testar no seu computador
-A página usa módulos JavaScript, que o navegador não carrega ao abrir o `index.html` direto da pasta (endereço `file://`). Para testar localmente, rode um servidor simples na pasta do projeto e abra `http://localhost:8000`:
-
-```bash
-python3 -m http.server 8000
-```
-
-O painel de IA só responde se o `ALLOWED_ORIGIN` do Worker permitir esse endereço. Sem isso, use as ferramentas externas (Gemini, ChatGPT ou Claude).
-
 ## Privacidade e ética
 Os prompts dos alunos passam pelo seu Worker e pela API do Gemini. A página avisa isso ao aluno. O Worker não guarda nada. Se a pesquisa precisar de aprovação de comitê de ética, inclua esse fluxo no termo de consentimento.
-
-## Tamanho das respostas
-O Worker permite respostas de até 8192 tokens (`MAX_OUTPUT_TOKENS` em `worker/worker.js`). Se a IA recusar esse limite, o Worker repete o pedido com 1024 tokens (`FALLBACK_OUTPUT_TOKENS`), o valor usado antes, e registra isso na aba **Logs**. Não use um valor baixo: no Gemini, os tokens que o modelo gasta "pensando" também contam nesse limite, e com 1024 as respostas eram cortadas no meio. Se uma resposta ainda assim for cortada, ela termina com o aviso "[Resposta interrompida: a IA atingiu o limite de tamanho.]".
 
 ## Limites de proteção do Worker
 O Worker só aceita chamadas do site em `ALLOWED_ORIGIN`, limita o tamanho do texto e aceita até 20 pedidos por minuto por IP. Esse limite é aproximado. Para um controle rigoroso, use a regra de rate limiting da Cloudflare.
