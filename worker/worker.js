@@ -1,5 +1,5 @@
 // Worker da Cloudflare para o Laboratório de prompts.
-// Recebe {input} (texto ou lista de {role, content}), chama a IA e devolve {text}.
+// Recebe {input} (texto ou lista de {role, content}), chama a IA e devolve {text, model}.
 // Variáveis e segredos (configure no painel da Cloudflare, nunca neste arquivo):
 //   ALLOWED_ORIGIN    ex.: https://seu-usuario.github.io   (só este site pode chamar)
 //   GEMINI_API_KEY    (segredo) chave do Google AI Studio
@@ -7,97 +7,127 @@
 //   GEMINI_MODEL      opcional, padrão "gemini-flash-latest"
 //   CLAUDE_MODEL      opcional, padrão "claude-haiku-5-5"
 
-const MAX_CHARS = 8000;        // tamanho máximo de tudo que o aluno envia
-const MAX_TURNS = 24;          // mensagens por conversa
-const RATE_PER_MIN = 20;       // pedidos por minuto por IP (por instância do Worker)
-const hits = new Map();
+const MAX_TOTAL_CHARACTERS = 8000;   // tamanho máximo de tudo que o aluno envia
+const MAX_TURNS = 24;                // mensagens por conversa
+const MAX_REQUESTS_PER_MINUTE = 20;  // por IP (por instância do Worker)
+const MAX_TRACKED_IPS = 5000;        // acima disso, a contagem é zerada para não crescer sem limite
+const MAX_OUTPUT_TOKENS = 1024;
+const ONE_MINUTE_MS = 60000;
 
-function cors(env, req) {
-  const o = req.headers.get("Origin") || "";
-  const ok = env.ALLOWED_ORIGIN === "*" || o === env.ALLOWED_ORIGIN;
+const DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
+const DEFAULT_CLAUDE_MODEL = "claude-haiku-5-5";
+
+const requestTimesByIp = new Map();
+
+// ---------- HTTP ----------
+
+function buildCorsPolicy(env, request) {
+  const origin = request.headers.get("Origin") || "";
+  const isAllowed = env.ALLOWED_ORIGIN === "*" || origin === env.ALLOWED_ORIGIN;
   return {
-    ok,
+    isAllowed,
     headers: {
-      "Access-Control-Allow-Origin": ok ? o : "null",
+      "Access-Control-Allow-Origin": isAllowed ? origin : "null",
       "Access-Control-Allow-Methods": "POST, OPTIONS",
       "Access-Control-Allow-Headers": "Content-Type",
       "Vary": "Origin",
     },
   };
 }
-const json = (obj, status, h) =>
-  new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json", ...h } });
 
-function limited(ip) {
+const jsonResponse = (body, status, headers) =>
+  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", ...headers } });
+
+// ---------- Proteções ----------
+
+function isRateLimited(ip) {
   const now = Date.now();
-  const arr = (hits.get(ip) || []).filter(t => now - t < 60000);
-  arr.push(now);
-  hits.set(ip, arr);
-  if (hits.size > 5000) hits.clear();
-  return arr.length > RATE_PER_MIN;
+  const recentRequests = (requestTimesByIp.get(ip) || []).filter(time => now - time < ONE_MINUTE_MS);
+  recentRequests.push(now);
+  requestTimesByIp.set(ip, recentRequests);
+  if (requestTimesByIp.size > MAX_TRACKED_IPS) requestTimesByIp.clear();
+  return recentRequests.length > MAX_REQUESTS_PER_MINUTE;
 }
 
-function toTurns(input) {
+// Aceita um texto ou uma conversa que termine com uma mensagem do aluno. Devolve null se for inválido.
+function parseConversation(input) {
   if (typeof input === "string") return [{ role: "user", content: input }];
   if (!Array.isArray(input)) return null;
-  const t = input.filter(m => m && (m.role === "user" || m.role === "assistant") && typeof m.content === "string");
-  if (!t.length || t[t.length - 1].role !== "user") return null;
-  return t;
+  const turns = input.filter(turn => turn && (turn.role === "user" || turn.role === "assistant") && typeof turn.content === "string");
+  if (!turns.length || turns[turns.length - 1].role !== "user") return null;
+  return turns;
 }
 
-async function callGemini(env, turns) {
-  const model = env.GEMINI_MODEL || "gemini-flash-latest";
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+const totalCharacters = turns => turns.reduce((sum, turn) => sum + turn.content.length, 0);
+
+// Devolve a mensagem de erro, ou null se a conversa puder ser enviada.
+function validateConversation(turns) {
+  if (!turns || turns.length > MAX_TURNS) return "entrada inválida";
+  if (totalCharacters(turns) > MAX_TOTAL_CHARACTERS) return "texto longo demais";
+  return null;
+}
+
+// ---------- Provedores de IA ----------
+// Cada um devolve {text, model} em caso de sucesso ou {status} com o código HTTP do erro.
+
+async function askGemini(env, turns) {
+  const model = env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify({
-      contents: turns.map(m => ({ role: m.role === "assistant" ? "model" : "user", parts: [{ text: m.content }] })),
-      generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
+      contents: turns.map(turn => ({ role: turn.role === "assistant" ? "model" : "user", parts: [{ text: turn.content }] })),
+      generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS, temperature: 0.7 },
     }),
   });
-  if (!r.ok) return { status: r.status };
-  const d = await r.json();
-  const text = (d.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
-  return { text, model };
+  if (!response.ok) return { status: response.status };
+  const data = await response.json();
+  const parts = data.candidates?.[0]?.content?.parts || [];
+  return { text: joinTextParts(parts), model };
 }
 
-async function callClaude(env, turns) {
-  const model = env.CLAUDE_MODEL || "claude-haiku-5-5";
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
+async function askClaude(env, turns) {
+  const model = env.CLAUDE_MODEL || DEFAULT_CLAUDE_MODEL;
+  const response = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model, max_tokens: 1024, messages: turns }),
+    body: JSON.stringify({ model, max_tokens: MAX_OUTPUT_TOKENS, messages: turns }),
   });
-  if (!r.ok) return { status: r.status };
-  const d = await r.json();
-  const text = (d.content || []).map(p => p.text || "").join("").trim();
-  return { text, model };
+  if (!response.ok) return { status: response.status };
+  const data = await response.json();
+  return { text: joinTextParts(data.content || []), model };
 }
 
-export default {
-  async fetch(req, env) {
-    const c = cors(env, req);
-    if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: c.headers });
-    if (req.method !== "POST") return json({ message: "método não permitido" }, 405, c.headers);
-    if (!c.ok) return json({ message: "origem não permitida" }, 403, c.headers);
+const joinTextParts = parts => parts.map(part => part.text || "").join("").trim();
 
-    const ip = req.headers.get("CF-Connecting-IP") || "?";
-    if (limited(ip)) return json({ message: "muitos pedidos" }, 429, c.headers);
+// Com a chave do Claude configurada, ela tem preferência sobre o Gemini.
+const askAi = (env, turns) => env.ANTHROPIC_API_KEY ? askClaude(env, turns) : askGemini(env, turns);
+
+// ---------- Entrada ----------
+
+export default {
+  async fetch(request, env) {
+    const cors = buildCorsPolicy(env, request);
+    const reply = (body, status) => jsonResponse(body, status, cors.headers);
+    if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors.headers });
+    if (request.method !== "POST") return reply({ message: "método não permitido" }, 405);
+    if (!cors.isAllowed) return reply({ message: "origem não permitida" }, 403);
+    if (isRateLimited(request.headers.get("CF-Connecting-IP") || "?")) return reply({ message: "muitos pedidos" }, 429);
 
     let body;
-    try { body = await req.json(); } catch { return json({ message: "JSON inválido" }, 400, c.headers); }
-    const turns = toTurns(body.input);
-    if (!turns || turns.length > MAX_TURNS) return json({ message: "entrada inválida" }, 400, c.headers);
-    if (turns.reduce((n, m) => n + m.content.length, 0) > MAX_CHARS) return json({ message: "texto longo demais" }, 400, c.headers);
+    try { body = await request.json(); } catch { return reply({ message: "JSON inválido" }, 400); }
+    const turns = parseConversation(body.input);
+    const validationError = validateConversation(turns);
+    if (validationError) return reply({ message: validationError }, 400);
 
-    let out;
+    let result;
     try {
-      out = env.ANTHROPIC_API_KEY ? await callClaude(env, turns) : await callGemini(env, turns);
+      result = await askAi(env, turns);
     } catch {
-      return json({ message: "falha ao chamar a IA" }, 502, c.headers);
+      return reply({ message: "falha ao chamar a IA" }, 502);
     }
-    if (out.status) return json({ message: "a IA recusou o pedido" }, out.status === 429 ? 429 : 502, c.headers);
-    if (!out.text) return json({ message: "resposta vazia" }, 502, c.headers);
-    return json({ text: out.text, model: out.model }, 200, c.headers);
+    if (result.status) return reply({ message: "a IA recusou o pedido" }, result.status === 429 ? 429 : 502);
+    if (!result.text) return reply({ message: "resposta vazia" }, 502);
+    return reply({ text: result.text, model: result.model }, 200);
   },
 };

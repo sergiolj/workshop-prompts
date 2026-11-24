@@ -76,7 +76,22 @@ Os prompts enviados ao painel ou ao verificador passam por um servidor do projet
 - **O vídeo não abre**: atualize a página ou tente outro navegador.
 
 ## Arquivos do repositório
-- `index.html`: o laboratório (página única).
+- `index.html`: a estrutura da página.
+- `css/styles.css`: a aparência (cores, fontes e layout).
+- `js/`: o funcionamento da página, em módulos:
+  - `main.js`: ponto de entrada, liga as partes da página.
+  - `config.js`: endereço do Worker da IA.
+  - `content.js`: textos fixos (assuntos, etapas, tipos de pergunta, ferramentas).
+  - `state.js`: estado da sessão do aluno (respostas e conversas).
+  - `steps.js`: navegação entre as etapas e etapa 1.
+  - `ai-panel.js`: painel de IA (ferramentas, conversas, envio).
+  - `ai-client.js`: comunicação com o Worker.
+  - `evaluation.js`: notas do aluno após cada resposta.
+  - `prompt-checker.js` e `rule-checker.js`: "Verificar meu prompt", com IA e por regras.
+  - `concept-reminder.js`: janela "Lembrar o conceito do vídeo".
+  - `summary.js`: quadro resumo e resumo em texto.
+  - `study-template.js`: modelo de prompt da etapa 7.
+  - `dom.js`: funções auxiliares.
 - `como-usar.mp4` e `o-que-mostra.mp4`: os vídeos das etapas 1 e 6.
 - `worker/worker.js`: o servidor que liga a página à IA (Gemini ou Claude).
 - `config.md`: passos usados para publicar o laboratório (GitHub Pages, Cloudflare e Gemini).

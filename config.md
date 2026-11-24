@@ -1,14 +1,16 @@
 # Laboratório de prompts: como publicar no GitHub (gratuito)
 
 Você vai usar três serviços gratuitos:
-1. **GitHub Pages** hospeda a página (`index.html` e os dois vídeos).
+1. **GitHub Pages** hospeda a página (`index.html`, as pastas `css` e `js` e os dois vídeos).
 2. **Cloudflare Workers** guarda a chave da IA e faz a ponte entre a página e a IA.
 3. **Google AI Studio (Gemini)** é a IA que avalia os prompts e responde no painel.
 
 A chave da IA fica só na Cloudflare. Ela nunca vai para o GitHub.
 
 ## Arquivos
-- `index.html`: o laboratório.
+- `index.html`: a estrutura da página.
+- `css/styles.css`: a aparência (cores, fontes e layout).
+- `js/`: o funcionamento da página, dividido em módulos. O endereço do Worker fica em `js/config.js`.
 - `como-usar.mp4` e `o-que-mostra.mp4`: os vídeos (precisam ficar na mesma pasta do `index.html`).
 - `worker/worker.js`: o código do servidor (você cola na Cloudflare).
 
@@ -21,7 +23,7 @@ A chave da IA fica só na Cloudflare. Ela nunca vai para o GitHub.
 1. No GitHub, clique em **New repository**. Nome sugerido: `laboratorio-de-prompts`.
 2. Escolha **Public**. Contas gratuitas só publicam o GitHub Pages em repositório público. Não há problema: a chave não fica no código.
 3. Marque "Add a README" e crie.
-4. Clique em **Add file > Upload files** e envie `index.html`, `como-usar.mp4`, `o-que-mostra.mp4` e a pasta `worker`. Faça o commit.
+4. Clique em **Add file > Upload files** e envie `index.html`, `como-usar.mp4`, `o-que-mostra.mp4` e as pastas `css`, `js` e `worker`. Faça o commit.
 5. Vá em **Settings > Pages**. Em "Build and deployment", escolha **Deploy from a branch**, branch `main`, pasta `/ (root)`, e salve.
 6. Aguarde 1 a 2 minutos. O endereço será `https://SEU-USUARIO.github.io/laboratorio-de-prompts/`.
 
@@ -35,7 +37,7 @@ A chave da IA fica só na Cloudflare. Ela nunca vai para o GitHub.
 5. Copie o endereço do Worker (algo como `https://lab-prompts.SEU-SUBDOMINIO.workers.dev`).
 
 ## Passo 4. Ligar a página ao Worker
-1. No GitHub, abra `index.html`, clique no lápis (Edit) e procure a linha `const WORKER_URL="";`.
+1. No GitHub, abra `js/config.js`, clique no lápis (Edit) e procure a linha `export const WORKER_URL = "";`.
 2. Cole o endereço do Worker entre as aspas e faça o commit.
 3. Aguarde o GitHub Pages atualizar (1 a 2 minutos) e abra a página.
 
@@ -53,6 +55,15 @@ A API do Claude é paga por uso, e a conta gratuita do claude.ai não gera chave
 
 ## Modelo
 Por padrão o Worker usa `gemini-flash-latest`. Para trocar, crie a variável `GEMINI_MODEL` (ou `CLAUDE_MODEL`) com o nome do modelo disponível na sua conta.
+
+## Testar no seu computador
+A página usa módulos JavaScript, que o navegador não carrega ao abrir o `index.html` direto da pasta (endereço `file://`). Para testar localmente, rode um servidor simples na pasta do projeto e abra `http://localhost:8000`:
+
+```bash
+python3 -m http.server 8000
+```
+
+O painel de IA só responde se o `ALLOWED_ORIGIN` do Worker permitir esse endereço. Sem isso, use as ferramentas externas (Gemini, ChatGPT ou Claude).
 
 ## Privacidade e ética
 Os prompts dos alunos passam pelo seu Worker e pela API do Gemini. A página avisa isso ao aluno. O Worker não guarda nada. Se a pesquisa precisar de aprovação de comitê de ética, inclua esse fluxo no termo de consentimento.
