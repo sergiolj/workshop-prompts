@@ -7,11 +7,15 @@
 //   GEMINI_MODEL      opcional, padrão "gemini-flash-latest"
 //   CLAUDE_MODEL      opcional, padrão "claude-haiku-5-5"
 
-const MAX_TOTAL_CHARACTERS = 8000;   // tamanho máximo de tudo que o aluno envia
+// Tamanho máximo de tudo que é enviado (na etapa 7, inclui o histórico da conversa com as respostas da IA).
+const MAX_TOTAL_CHARACTERS = 40000;
 const MAX_TURNS = 24;                // mensagens por conversa
 const MAX_REQUESTS_PER_MINUTE = 20;  // por IP (por instância do Worker)
 const MAX_TRACKED_IPS = 5000;        // acima disso, a contagem é zerada para não crescer sem limite
-const MAX_OUTPUT_TOKENS = 1024;
+// Limite de tamanho da resposta. No Gemini, os tokens de "raciocínio" do modelo também contam
+// neste limite; um valor baixo (ex.: 1024) corta respostas no meio.
+const MAX_OUTPUT_TOKENS = 8192;
+const TRUNCATION_NOTICE = "\n\n[Resposta interrompida: a IA atingiu o limite de tamanho.]";
 const ONE_MINUTE_MS = 60000;
 
 const DEFAULT_GEMINI_MODEL = "gemini-flash-latest";
@@ -82,8 +86,9 @@ async function askGemini(env, turns) {
   });
   if (!response.ok) return { status: response.status };
   const data = await response.json();
-  const parts = data.candidates?.[0]?.content?.parts || [];
-  return { text: joinTextParts(parts), model };
+  const candidate = data.candidates?.[0];
+  const text = joinTextParts(candidate?.content?.parts || []);
+  return { text: markIfTruncated(text, candidate?.finishReason === "MAX_TOKENS"), model };
 }
 
 async function askClaude(env, turns) {
@@ -95,10 +100,13 @@ async function askClaude(env, turns) {
   });
   if (!response.ok) return { status: response.status };
   const data = await response.json();
-  return { text: joinTextParts(data.content || []), model };
+  return { text: markIfTruncated(joinTextParts(data.content || []), data.stop_reason === "max_tokens"), model };
 }
 
 const joinTextParts = parts => parts.map(part => part.text || "").join("").trim();
+
+// Avisa o aluno quando a resposta foi cortada, em vez de terminar o texto no meio sem explicação.
+const markIfTruncated = (text, wasTruncated) => text && wasTruncated ? text + TRUNCATION_NOTICE : text;
 
 // Com a chave do Claude configurada, ela tem preferência sobre o Gemini.
 const askAi = (env, turns) => env.ANTHROPIC_API_KEY ? askClaude(env, turns) : askGemini(env, turns);

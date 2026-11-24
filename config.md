@@ -68,5 +68,8 @@ O painel de IA só responde se o `ALLOWED_ORIGIN` do Worker permitir esse endere
 ## Privacidade e ética
 Os prompts dos alunos passam pelo seu Worker e pela API do Gemini. A página avisa isso ao aluno. O Worker não guarda nada. Se a pesquisa precisar de aprovação de comitê de ética, inclua esse fluxo no termo de consentimento.
 
+## Tamanho das respostas
+O Worker permite respostas de até 8192 tokens (`MAX_OUTPUT_TOKENS` em `worker/worker.js`). Não use um valor baixo: no Gemini, os tokens que o modelo gasta "pensando" também contam nesse limite, e com 1024 as respostas eram cortadas no meio. Se uma resposta ainda assim for cortada, ela termina com o aviso "[Resposta interrompida: a IA atingiu o limite de tamanho.]".
+
 ## Limites de proteção do Worker
 O Worker só aceita chamadas do site em `ALLOWED_ORIGIN`, limita o tamanho do texto e aceita até 20 pedidos por minuto por IP. Esse limite é aproximado. Para um controle rigoroso, use a regra de rate limiting da Cloudflare.
