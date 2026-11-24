@@ -5,6 +5,8 @@
 //   GEMINI_API_KEY    (segredo) chave do Google AI Studio
 //   ANTHROPIC_API_KEY (segredo, opcional) se existir, usa o Claude no lugar do Gemini
 //   GEMINI_MODEL      opcional, padrão "gemini-flash-latest"
+//   GEMINI_FALLBACK_MODELS opcional, modelos reserva separados por vírgula,
+//                     padrão "gemini-flash-lite-latest" (usados se o principal recusar)
 //   CLAUDE_MODEL      opcional, padrão "claude-haiku-5-5"
 
 const MAX_CHARS = 8000;        // tamanho máximo de tudo que o aluno envia
@@ -45,9 +47,20 @@ function toTurns(input) {
   return t;
 }
 
-async function callGemini(env, turns) {
-  const model = env.GEMINI_MODEL || "gemini-flash-latest";
-  const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+// Erros em que não adianta trocar de modelo: chave inválida ou sem permissão.
+const KEY_ERRORS = [401, 403];
+// Erros temporários (servidor sobrecarregado): tenta de novo o mesmo modelo uma vez.
+const TRANSIENT_ERRORS = [500, 503];
+const RETRY_DELAY_MS = 1500;
+
+function geminiModels(env) {
+  const main = env.GEMINI_MODEL || "gemini-flash-latest";
+  const fallbacks = (env.GEMINI_FALLBACK_MODELS ?? "gemini-flash-lite-latest").split(",").map(m => m.trim()).filter(Boolean);
+  return [main, ...fallbacks.filter(m => m !== main)];
+}
+
+async function fetchGemini(env, model, turns) {
+  const request = () => fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify({
@@ -55,10 +68,37 @@ async function callGemini(env, turns) {
       generationConfig: { maxOutputTokens: 1024, temperature: 0.7 },
     }),
   });
-  if (!r.ok) return { status: r.status };
-  const d = await r.json();
-  const text = (d.candidates?.[0]?.content?.parts || []).map(p => p.text || "").join("").trim();
-  return { text, model };
+  const r = await request();
+  if (!TRANSIENT_ERRORS.includes(r.status)) return r;
+  await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+  return request();
+}
+
+// Motivo da recusa dado pelo Google (ex.: "The model is overloaded"), para a página e para os Logs.
+async function errorDetail(model, r) {
+  let reason = "";
+  try { reason = (await r.json()).error?.message || ""; } catch {}
+  const detail = `${model} HTTP ${r.status}${reason ? ": " + reason : ""}`.slice(0, 300);
+  console.error("Gemini recusou:", detail);
+  return detail;
+}
+
+async function callGemini(env, turns) {
+  let failure = null;
+  for (const model of geminiModels(env)) {
+    const r = await fetchGemini(env, model, turns);
+    if (r.ok) {
+      const d = await r.json();
+      const candidate = d.candidates?.[0];
+      const text = (candidate?.content?.parts || []).map(p => p.text || "").join("").trim();
+      if (text) return { text, model };
+      failure = { status: 502, detail: `${model}: resposta sem texto (${candidate?.finishReason || d.promptFeedback?.blockReason || "?"})` };
+      continue;
+    }
+    failure = { status: r.status, detail: await errorDetail(model, r) };
+    if (KEY_ERRORS.includes(r.status)) break;
+  }
+  return failure;
 }
 
 async function callClaude(env, turns) {
@@ -96,7 +136,7 @@ export default {
     } catch {
       return json({ message: "falha ao chamar a IA" }, 502, c.headers);
     }
-    if (out.status) return json({ message: "a IA recusou o pedido" }, out.status === 429 ? 429 : 502, c.headers);
+    if (out.status) return json({ message: "a IA recusou o pedido", detail: out.detail }, out.status === 429 ? 429 : 502, c.headers);
     if (!out.text) return json({ message: "resposta vazia" }, 502, c.headers);
     return json({ text: out.text, model: out.model }, 200, c.headers);
   },
