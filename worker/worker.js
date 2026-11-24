@@ -72,11 +72,35 @@ function validateConversation(turns) {
 }
 
 // ---------- Provedores de IA ----------
-// Cada um devolve {text, model} em caso de sucesso ou {status} com o código HTTP do erro.
+// Cada um devolve {text, model} em caso de sucesso ou {status, detail} com o código HTTP e o motivo do erro.
+
+// Erros temporários (servidor da IA sobrecarregado) ganham uma nova tentativa.
+const TRANSIENT_STATUSES = [500, 503];
+const RETRY_DELAY_MS = 1500;
+const MAX_ERROR_DETAIL_CHARACTERS = 300;
+
+async function fetchWithRetry(url, init) {
+  const response = await fetch(url, init);
+  if (!TRANSIENT_STATUSES.includes(response.status)) return response;
+  await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+  return fetch(url, init);
+}
+
+// Lê a mensagem de erro da IA (ex.: "The model is overloaded") para mostrar ao aluno e nos Logs.
+async function describeProviderError(providerName, response) {
+  let reason = "";
+  try {
+    const data = await response.json();
+    reason = data.error?.message || "";
+  } catch { /* resposta sem JSON */ }
+  const detail = `${providerName} HTTP ${response.status}${reason ? ": " + reason : ""}`.slice(0, MAX_ERROR_DETAIL_CHARACTERS);
+  console.error(detail);
+  return { status: response.status, detail };
+}
 
 async function askGemini(env, turns) {
   const model = env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
-  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+  const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify({
@@ -84,21 +108,22 @@ async function askGemini(env, turns) {
       generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS, temperature: 0.7 },
     }),
   });
-  if (!response.ok) return { status: response.status };
+  if (!response.ok) return describeProviderError("Gemini", response);
   const data = await response.json();
   const candidate = data.candidates?.[0];
   const text = joinTextParts(candidate?.content?.parts || []);
-  return { text: markIfTruncated(text, candidate?.finishReason === "MAX_TOKENS"), model };
+  const finishReason = candidate?.finishReason || data.promptFeedback?.blockReason || "";
+  return { text: markIfTruncated(text, finishReason === "MAX_TOKENS"), model, detail: text ? "" : "Gemini: " + (finishReason || "sem texto") };
 }
 
 async function askClaude(env, turns) {
   const model = env.CLAUDE_MODEL || DEFAULT_CLAUDE_MODEL;
-  const response = await fetch("https://api.anthropic.com/v1/messages", {
+  const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({ model, max_tokens: MAX_OUTPUT_TOKENS, messages: turns }),
   });
-  if (!response.ok) return { status: response.status };
+  if (!response.ok) return describeProviderError("Claude", response);
   const data = await response.json();
   return { text: markIfTruncated(joinTextParts(data.content || []), data.stop_reason === "max_tokens"), model };
 }
@@ -110,6 +135,19 @@ const markIfTruncated = (text, wasTruncated) => text && wasTruncated ? text + TR
 
 // Com a chave do Claude configurada, ela tem preferência sobre o Gemini.
 const askAi = (env, turns) => env.ANTHROPIC_API_KEY ? askClaude(env, turns) : askGemini(env, turns);
+
+// Erros da IA repassados à página: 429 (cota) e 503 (sobrecarga) a página trata como "ocupada".
+function responseStatusFor(providerStatus) {
+  return providerStatus === 429 || providerStatus === 503 ? providerStatus : 502;
+}
+
+function providerErrorMessage(providerStatus) {
+  if (providerStatus === 429) return "cota da IA esgotada ou muitos pedidos";
+  if (providerStatus === 503) return "a IA está sobrecarregada";
+  if (providerStatus === 401 || providerStatus === 403) return "chave da IA inválida ou sem permissão";
+  if (providerStatus === 404) return "modelo da IA não encontrado";
+  return "a IA recusou o pedido";
+}
 
 // ---------- Entrada ----------
 
@@ -131,11 +169,12 @@ export default {
     let result;
     try {
       result = await askAi(env, turns);
-    } catch {
-      return reply({ message: "falha ao chamar a IA" }, 502);
+    } catch (error) {
+      console.error("falha ao chamar a IA:", String(error));
+      return reply({ message: "falha ao chamar a IA", detail: String(error) }, 502);
     }
-    if (result.status) return reply({ message: "a IA recusou o pedido" }, result.status === 429 ? 429 : 502);
-    if (!result.text) return reply({ message: "resposta vazia" }, 502);
+    if (result.status) return reply({ message: providerErrorMessage(result.status), detail: result.detail }, responseStatusFor(result.status));
+    if (!result.text) return reply({ message: "resposta vazia", detail: result.detail }, 502);
     return reply({ text: result.text, model: result.model }, 200);
   },
 };

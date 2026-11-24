@@ -46,6 +46,12 @@ A chave da IA fica só na Cloudflare. Ela nunca vai para o GitHub.
 - Escreva um prompt e clique em **Verificar meu prompt**: deve aparecer o veredito com uma sugestão.
 - Se a opção "Neste painel (IA)" não aparecer, o `WORKER_URL` está vazio. A página continua funcionando, com o verificador por regras e as ferramentas externas.
 - Se aparecer erro, abra o Worker na Cloudflare e veja a aba **Logs**. Os motivos mais comuns são `ALLOWED_ORIGIN` diferente do endereço do site ou chave errada.
+- O aviso de erro na página traz o motivo dado pela IA, por exemplo `Gemini HTTP 400: ...`. O mesmo texto aparece na aba **Logs** do Worker. Os mais comuns:
+  - `HTTP 503` (a IA está sobrecarregada): problema temporário do Gemini. O Worker já tenta de novo uma vez; se persistir, espere alguns minutos.
+  - `HTTP 429`: a cota gratuita acabou ou houve pedidos demais seguidos.
+  - `HTTP 401` ou `403`: a chave `GEMINI_API_KEY` está errada ou sem permissão.
+  - `HTTP 404`: o modelo em `GEMINI_MODEL` não existe. Apague a variável para usar o padrão.
+  - `HTTP 400`: a IA recusou os parâmetros do pedido. Leia a mensagem que vem depois do código.
 
 ## Se a cota gratuita acabar
 O Gemini gratuito tem limite diário. Quando acaba, a página avisa e o verificador usa as regras automaticamente. O painel de IA fica indisponível até a cota voltar.
