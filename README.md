@@ -4,11 +4,17 @@ Workshop autoguiado para avaliar a qualidade de prompts de IA. O aluno faz quatr
 
 Leva cerca de 20 minutos e funciona no navegador do computador ou do celular. Não é preciso criar conta nem instalar nada.
 
-> Quer publicar a sua própria cópia do laboratório? Veja o [LEIA-ME.md](LEIA-ME.md), com o passo a passo para GitHub Pages, Cloudflare e Gemini.
+## Acesse o laboratório
+
+**https://sergiolj.github.io/workshop-prompts/**
+
+Abra o endereço acima no navegador e siga as etapas descritas abaixo. A página é publicada pelo GitHub Pages a partir deste repositório.
+
+> Quer publicar a sua própria cópia do laboratório? Veja o [config.md](config.md), com os passos usados na publicação (GitHub Pages, Cloudflare e Gemini).
 
 ## Como funciona
 
-A tela tem duas partes:
+Depois de abrir https://sergiolj.github.io/workshop-prompts/, você verá uma tela com duas partes:
 
 - **Roteiro** (à esquerda): as etapas do workshop, com instruções, exemplos e vídeos curtos.
 - **IA** (à direita, a partir da etapa 2): onde você escreve e envia os prompts. No celular, alterne entre as duas pelas abas **Roteiro** e **IA** no topo.
@@ -73,5 +79,5 @@ Os prompts enviados ao painel ou ao verificador passam por um servidor do projet
 - `index.html`: o laboratório (página única).
 - `como-usar.mp4` e `o-que-mostra.mp4`: os vídeos das etapas 1 e 6.
 - `worker/worker.js`: o servidor que liga a página à IA (Gemini ou Claude).
-- `LEIA-ME.md`: como publicar a sua própria cópia.
+- `config.md`: passos usados para publicar o laboratório (GitHub Pages, Cloudflare e Gemini).
 - `resultado.txt`: exemplo de resumo gerado ao final do workshop.
