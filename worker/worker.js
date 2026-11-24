@@ -15,6 +15,9 @@ const MAX_TRACKED_IPS = 5000;        // acima disso, a contagem é zerada para n
 // Limite de tamanho da resposta. No Gemini, os tokens de "raciocínio" do modelo também contam
 // neste limite; um valor baixo (ex.: 1024) corta respostas no meio.
 const MAX_OUTPUT_TOKENS = 8192;
+// Limite usado antes da correção das respostas cortadas. Se a IA recusar o limite maior,
+// o Worker repete o pedido com este valor, que já funcionava.
+const FALLBACK_OUTPUT_TOKENS = 1024;
 const TRUNCATION_NOTICE = "\n\n[Resposta interrompida: a IA atingiu o limite de tamanho.]";
 const ONE_MINUTE_MS = 60000;
 
@@ -98,14 +101,14 @@ async function describeProviderError(providerName, response) {
   return { status: response.status, detail };
 }
 
-async function askGemini(env, turns) {
+async function askGemini(env, turns, maxOutputTokens) {
   const model = env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
   const response = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-goog-api-key": env.GEMINI_API_KEY },
     body: JSON.stringify({
       contents: turns.map(turn => ({ role: turn.role === "assistant" ? "model" : "user", parts: [{ text: turn.content }] })),
-      generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS, temperature: 0.7 },
+      generationConfig: { maxOutputTokens, temperature: 0.7 },
     }),
   });
   if (!response.ok) return describeProviderError("Gemini", response);
@@ -116,12 +119,12 @@ async function askGemini(env, turns) {
   return { text: markIfTruncated(text, finishReason === "MAX_TOKENS"), model, detail: text ? "" : "Gemini: " + (finishReason || "sem texto") };
 }
 
-async function askClaude(env, turns) {
+async function askClaude(env, turns, maxOutputTokens) {
   const model = env.CLAUDE_MODEL || DEFAULT_CLAUDE_MODEL;
   const response = await fetchWithRetry("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-api-key": env.ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model, max_tokens: MAX_OUTPUT_TOKENS, messages: turns }),
+    body: JSON.stringify({ model, max_tokens: maxOutputTokens, messages: turns }),
   });
   if (!response.ok) return describeProviderError("Claude", response);
   const data = await response.json();
@@ -134,7 +137,19 @@ const joinTextParts = parts => parts.map(part => part.text || "").join("").trim(
 const markIfTruncated = (text, wasTruncated) => text && wasTruncated ? text + TRUNCATION_NOTICE : text;
 
 // Com a chave do Claude configurada, ela tem preferência sobre o Gemini.
-const askAi = (env, turns) => env.ANTHROPIC_API_KEY ? askClaude(env, turns) : askGemini(env, turns);
+const askProvider = (env, turns, maxOutputTokens) =>
+  env.ANTHROPIC_API_KEY ? askClaude(env, turns, maxOutputTokens) : askGemini(env, turns, maxOutputTokens);
+
+// Erros que não mudam ao reduzir o limite de resposta: cota, chave e modelo.
+const ERRORS_UNRELATED_TO_OUTPUT_LIMIT = [401, 403, 404, 429];
+
+// Tenta com o limite maior; se a IA recusar por outro motivo, repete com o limite antigo.
+async function askAi(env, turns) {
+  const result = await askProvider(env, turns, MAX_OUTPUT_TOKENS);
+  if (!result.status || ERRORS_UNRELATED_TO_OUTPUT_LIMIT.includes(result.status)) return result;
+  console.error(`limite de ${MAX_OUTPUT_TOKENS} tokens recusado (${result.detail}); repetindo com ${FALLBACK_OUTPUT_TOKENS}`);
+  return askProvider(env, turns, FALLBACK_OUTPUT_TOKENS);
+}
 
 // Erros da IA repassados à página: 429 (cota) e 503 (sobrecarga) a página trata como "ocupada".
 function responseStatusFor(providerStatus) {
