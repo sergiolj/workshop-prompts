@@ -39,7 +39,7 @@ async function postToWorker(input, wantsStreaming, signal) {
     });
   } catch (error) {
     const reason = error && error.name === "AbortError"
-      ? "o Worker não respondeu em 90 segundos"
+      ? `o Worker não respondeu em ${WORKER_TIMEOUT_MS / 1000} segundos`
       : "sem conexão com o Worker (confira o WORKER_URL e o ALLOWED_ORIGIN): " + String(error);
     throw new AiError("network", reason);
   }

@@ -3,4 +3,4 @@
 export const WORKER_URL = "https://lab-prompts.sergio-lopes.workers.dev";
 
 // Tempo máximo de espera por uma resposta do Worker.
-export const WORKER_TIMEOUT_MS = 90000;
+export const WORKER_TIMEOUT_MS = 120000;
