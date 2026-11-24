@@ -46,6 +46,12 @@ A chave da IA fica só na Cloudflare. Ela nunca vai para o GitHub.
 - Escreva um prompt e clique em **Verificar meu prompt**: deve aparecer o veredito com uma sugestão.
 - Se a opção "Neste painel (IA)" não aparecer, o `WORKER_URL` está vazio. A página continua funcionando, com o verificador por regras e as ferramentas externas.
 - Se aparecer erro, abra o Worker na Cloudflare e veja a aba **Logs**. Os motivos mais comuns são `ALLOWED_ORIGIN` diferente do endereço do site ou chave errada.
+- O aviso de erro na página traz o motivo dado pela IA, por exemplo `Gemini HTTP 400: ...`. O mesmo texto aparece na aba **Logs** do Worker. Os mais comuns:
+  - `HTTP 503` (a IA está sobrecarregada): problema temporário do Gemini. O Worker já tenta de novo uma vez; se persistir, espere alguns minutos.
+  - `HTTP 429`: a cota gratuita acabou ou houve pedidos demais seguidos.
+  - `HTTP 401` ou `403`: a chave `GEMINI_API_KEY` está errada ou sem permissão.
+  - `HTTP 404`: o modelo em `GEMINI_MODEL` não existe. Apague a variável para usar o padrão.
+  - `HTTP 400`: a IA recusou os parâmetros do pedido. Leia a mensagem que vem depois do código.
 
 ## Se a cota gratuita acabar
 O Gemini gratuito tem limite diário. Quando acaba, a página avisa e o verificador usa as regras automaticamente. O painel de IA fica indisponível até a cota voltar.
@@ -69,7 +75,7 @@ O painel de IA só responde se o `ALLOWED_ORIGIN` do Worker permitir esse endere
 Os prompts dos alunos passam pelo seu Worker e pela API do Gemini. A página avisa isso ao aluno. O Worker não guarda nada. Se a pesquisa precisar de aprovação de comitê de ética, inclua esse fluxo no termo de consentimento.
 
 ## Tamanho das respostas
-O Worker permite respostas de até 8192 tokens (`MAX_OUTPUT_TOKENS` em `worker/worker.js`). Não use um valor baixo: no Gemini, os tokens que o modelo gasta "pensando" também contam nesse limite, e com 1024 as respostas eram cortadas no meio. Se uma resposta ainda assim for cortada, ela termina com o aviso "[Resposta interrompida: a IA atingiu o limite de tamanho.]".
+O Worker permite respostas de até 8192 tokens (`MAX_OUTPUT_TOKENS` em `worker/worker.js`). Se a IA recusar esse limite, o Worker repete o pedido com 1024 tokens (`FALLBACK_OUTPUT_TOKENS`), o valor usado antes, e registra isso na aba **Logs**. Não use um valor baixo: no Gemini, os tokens que o modelo gasta "pensando" também contam nesse limite, e com 1024 as respostas eram cortadas no meio. Se uma resposta ainda assim for cortada, ela termina com o aviso "[Resposta interrompida: a IA atingiu o limite de tamanho.]".
 
 ## Limites de proteção do Worker
 O Worker só aceita chamadas do site em `ALLOWED_ORIGIN`, limita o tamanho do texto e aceita até 20 pedidos por minuto por IP. Esse limite é aproximado. Para um controle rigoroso, use a regra de rate limiting da Cloudflare.
